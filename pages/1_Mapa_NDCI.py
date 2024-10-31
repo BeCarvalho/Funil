@@ -10,7 +10,7 @@ st.sidebar.markdown("O índice Médio de Clorofila de um reservatório represent
 # Título e introdução do app
 st.title("Monitoramento do Reservatório do Funil")
 st.markdown("""
-    Este aplicativo exibe informações de qualidade da água do Reservatório do Funil em Resende, RJ.
+    Este aplicativo exibe informações da qualidade da água do Reservatório do Funil em Resende, RJ.
     O mapa interativo abaixo é atualizado com dados do Google Earth Engine.
 """)
 
