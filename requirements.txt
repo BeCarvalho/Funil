@@ -1,2 +1,3 @@
 leafmap
 setuptools
+streamlit-extras
