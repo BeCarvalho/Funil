@@ -3,14 +3,14 @@ import streamlit.components.v1 as components
 
 # Configuração da página do Streamlit para melhor visualização
 st.set_page_config(page_title="Monitoramento do Reservatório do Funil", layout="wide")
-st.sidebar.header("Índice Médio de Clorofila")
+st.sidebar.header("índice Médio de Clorofila")
 st.sidebar.markdown("O índice Médio de Clorofila de um reservatório representa uma medida indireta de sua poluição. No mapa ao lado, selecione um intervalo de datas para obter uma média "
-                    "da eutrofização observada pelo satélite em cada região do reservatório.", unsafe_allow_html=True)
+                    "da eutrofização observada pelo satéluite em cada região do reservatório.", unsafe_allow_html=True)
 
 # Título e introdução do app
 st.title("Monitoramento do Reservatório do Funil")
 st.markdown("""
-    Este aplicativo exibe informações da qualidade da água do Reservatório do Funil em Resende, RJ.
+    Este aplicativo exibe informações de qualidade da água do Reservatório do Funil em Resende.
     O mapa interativo abaixo é atualizado com dados do Google Earth Engine.
 """)
 

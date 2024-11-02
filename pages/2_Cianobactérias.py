@@ -8,7 +8,7 @@ st.set_page_config(page_title="HIDROSIS", page_icon="📈")
 
 st.markdown("# Densidade de Cianobactérias no Reservatório do Funil")
 #st.sidebar.header("Mapa - Densidade de Cianobactérias")
-#st.sidebar.markdown("Posso colocar um texto explicativo aqui se eu quiser!<br>Com uma quebra de linha.", unsafe_allow_html=True)
+#st.sidebar.markdown("Neste!<br>Com uma quebra de linha.", unsafe_allow_html=True)
 
 
 st.write(
