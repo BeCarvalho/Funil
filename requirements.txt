@@ -4,3 +4,4 @@ streamlit-extras
 supabase
 plotly
 cyfi
+st-supabase-connection
