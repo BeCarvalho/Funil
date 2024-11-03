@@ -3,6 +3,8 @@ import subprocess
 import datetime
 import re
 from st_supabase_connection import SupabaseConnection
+import leafmap.foliumap as leafmap
+import pandas as pd
 
 # Definir as coordenadas geográficas pré-definidas
 LATITUDE = -22.528801960010114
@@ -46,6 +48,30 @@ def save_to_supabase(data):
     return response
 
 
+# Função para obter dados do Supabase
+def get_data_from_supabase():
+    table = conn.table("CyFi")
+    response = table.select("*").execute()
+    return response.data
+
+
+# Função para criar o mapa
+def create_map(data):
+    m = leafmap.Map(center=[LATITUDE, LONGITUDE], zoom=10)
+    df = pd.DataFrame(data)
+
+    # Adicionar marcadores ao mapa
+    for _, row in df.iterrows():
+        popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
+        m.add_marker(
+            location=[row['latitude'], row['longitude']],
+            popup=popup,
+            tooltip=f"Contagem: {row['contagem']}"
+        )
+
+    return m
+
+
 # Criar o widget de seleção de data
 data_selecionada = st.date_input(
     "Selecione uma data",
@@ -82,3 +108,12 @@ if st.button("Gerar Previsão"):
         st.error("Ocorreu um erro ao executar o comando CyFi.")
         st.text("Erro:")
         st.code(resultado.stderr, language="text")
+
+# Exibir o mapa com todos os dados do Supabase
+st.subheader("Mapa de Concentração de Cianobactérias")
+supabase_data = get_data_from_supabase()
+if supabase_data:
+    map_obj = create_map(supabase_data)
+    map_obj.to_streamlit(height=400)
+else:
+    st.warning("Não há dados disponíveis para exibir no mapa.")
