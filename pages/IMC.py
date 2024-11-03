@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_extras.stylable_container import stylable_container
 from supabase import create_client, Client
 import pandas as pd
+import plotly.express as px
 
 # Configuração do Supabase
 supabase_url = st.secrets["connections"]["supabase"]["SUPABASE_URL"]
@@ -24,7 +25,7 @@ def save_to_supabase(idade, peso, altura, imc, classificacao):
 # Função para carregar dados do Supabase
 @st.cache_data(ttl=10)
 def load_data():
-    data = supabase.table("imc_results").select("*").execute()
+    data = supabase.table("imc_results").select("*").order('timestamp', desc=True).limit(100).execute()
     return pd.DataFrame(data.data)
 
 
@@ -73,3 +74,9 @@ with stylable_container(
 st.subheader("Resultados Anteriores")
 df = load_data()
 st.dataframe(df)
+
+# Criar e exibir o histograma
+st.subheader("Distribuição dos últimos 100 valores de IMC")
+fig = px.histogram(df, x="imc", nbins=20, title="Histograma de IMC")
+fig.update_layout(bargap=0.1)
+st.plotly_chart(fig, use_container_width=True)
