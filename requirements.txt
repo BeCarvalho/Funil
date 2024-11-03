@@ -2,3 +2,4 @@ leafmap
 setuptools
 streamlit-extras
 supabase
+plotly
