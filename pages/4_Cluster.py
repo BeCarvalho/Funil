@@ -6,7 +6,8 @@ import pandas as pd
 st.title("Cluster de Densidade Celular no Reservatório")
 
 # Carregar dados do arquivo CSV
-url = "https://raw.githubusercontent.com/BeCarvalho/Funil/main/files/output01092023.csv"
+url = "https://raw.githubusercontent.com/BeCarvalho/Funil/main/files/preds_2024-08-15.csv"
+
 try:
     # Especificar a codificação utf-8 para carregar caracteres especiais corretamente
     data = pd.read_csv(url, encoding="utf-8")
