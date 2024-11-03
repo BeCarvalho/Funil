@@ -51,21 +51,25 @@ def get_data_from_supabase():
 
 # Função para criar o mapa interativo
 def create_interactive_map(supabase_data):
-    m = leafmap.Map(center=[-22.528801960010114, -44.5645781500265], zoom=12)
+    # Definindo uma largura maior para o mapa
+    map_width = 1000  # Você pode ajustar este valor conforme necessário
+
+    m = leafmap.Map(center=[-22.528801960010114, -44.5645781500265], zoom=13)
     m.add_basemap("HYBRID")
 
     if supabase_data:
         for row in supabase_data:
-            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Intensidade: {row['severidade']}"
+            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
             m.add_marker(
                 location=[row['latitude'], row['longitude']],
                 popup=popup,
                 tooltip=f"Contagem: {row['contagem']}"
             )
 
-    clicked_data = st_folium(m, height=600, width=700)
-    coordinates = None
+    # Usando st_folium com largura específica e altura proporcional
+    clicked_data = st_folium(m, width=map_width, height=map_width * 0.6)
 
+    coordinates = None
     if clicked_data["last_clicked"]:
         lat = clicked_data["last_clicked"]["lat"]
         lon = clicked_data["last_clicked"]["lng"]
@@ -73,7 +77,8 @@ def create_interactive_map(supabase_data):
 
         # Criando um container para as coordenadas
         with st.container():
-            st.markdown("<h3 style='text-align: left;'><strong>Coordenadas selecionadas</strong></h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'><strong>Coordenadas selecionadas</strong></h3>",
+                        unsafe_allow_html=True)
             col1, col2 = st.columns(2)
             with col1:
                 st.metric(label="Latitude", value=f"{lat:.6f}")
