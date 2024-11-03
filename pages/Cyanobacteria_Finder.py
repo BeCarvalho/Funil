@@ -28,9 +28,25 @@ if st.button("Gerar Previsão"):
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
 
     # Exibir o resultado
+    st.subheader("Resultado da previsão:")
     if resultado.returncode == 0:
-        st.text("Resultado da previsão:")
-        st.code(resultado.stdout, language="text")
+        if resultado.stdout:
+            st.code(resultado.stdout, language="text")
+        else:
+            st.warning("O comando foi executado com sucesso, mas não retornou nenhuma saída.")
+            st.text("Comando executado:")
+            st.code(comando, language="bash")
     else:
         st.error("Ocorreu um erro ao executar o comando CyFi.")
-        st.text(resultado.stderr)
+        st.text("Erro:")
+        st.code(resultado.stderr, language="text")
+        st.text("Comando executado:")
+        st.code(comando, language="bash")
+
+    # Exibir informações adicionais para debug
+    st.subheader("Informações de Debug:")
+    st.text(f"Código de retorno: {resultado.returncode}")
+    st.text(f"Saída padrão (stdout):")
+    st.code(resultado.stdout if resultado.stdout else "Nenhuma saída", language="text")
+    st.text(f"Saída de erro (stderr):")
+    st.code(resultado.stderr if resultado.stderr else "Nenhum erro", language="text")
