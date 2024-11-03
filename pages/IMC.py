@@ -75,8 +75,9 @@ st.subheader("Resultados Anteriores")
 df = load_data()
 st.dataframe(df)
 
-# Criar e exibir o histograma
-st.subheader("Distribuição dos últimos 100 valores de IMC")
-fig = px.histogram(df, x="imc", nbins=20, title="Histograma de IMC")
-fig.update_layout(bargap=0.1)
+# Criar e exibir o gráfico de barras
+st.subheader("Últimos 100 valores de IMC")
+df_sorted = df.sort_values('timestamp', ascending=True).tail(100)
+fig = px.bar(df_sorted, x=df_sorted.index, y="imc", title="Gráfico de Barras de IMC")
+fig.update_layout(xaxis_title="Índice", yaxis_title="IMC")
 st.plotly_chart(fig, use_container_width=True)
