@@ -5,3 +5,4 @@ supabase
 plotly
 cyfi
 st-supabase-connection
+streamlit-folium
