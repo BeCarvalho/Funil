@@ -3,3 +3,4 @@ setuptools
 streamlit-extras
 supabase
 plotly
+cyfi
