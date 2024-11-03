@@ -59,7 +59,7 @@ def create_interactive_map(supabase_data):
 
     if supabase_data:
         for row in supabase_data:
-            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
+            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Intensidade: {row['severidade']}"
             m.add_marker(
                 location=[row['latitude'], row['longitude']],
                 popup=popup,
