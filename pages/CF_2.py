@@ -56,7 +56,7 @@ def create_interactive_map(supabase_data):
 
     if supabase_data:
         for row in supabase_data:
-            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
+            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Intensidade: {row['severidade']}"
             m.add_marker(
                 location=[row['latitude'], row['longitude']],
                 popup=popup,
@@ -103,7 +103,7 @@ if st.button("Gerar Previsão") and st.session_state.coordinates:
     data_formatada = data_selecionada.strftime("%Y-%m-%d")
     comando = f"cyfi predict-point --lat {latitude} --lon {longitude} --date {data_formatada}"
 
-    with st.spinner("Aguarde enquanto o HidroSIS acessa as informações..."):
+    with st.spinner("Aguarde enquanto o HidroSIS acessa as informações. Isso pode levar algum tempo."):
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
 
     if resultado.returncode == 0:
