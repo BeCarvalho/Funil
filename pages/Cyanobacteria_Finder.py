@@ -57,7 +57,7 @@ def get_data_from_supabase():
 
 # Função para criar o mapa
 def create_map(data):
-    m = leafmap.Map(center=[LATITUDE, LONGITUDE], zoom=10)
+    m = leafmap.Map(center=[LATITUDE, LONGITUDE], zoom=12)
     df = pd.DataFrame(data)
 
     # Adicionar marcadores ao mapa
@@ -83,7 +83,7 @@ if st.button("Gerar Previsão"):
     data_formatada = data_selecionada.strftime("%Y-%m-%d")
     comando = f"cyfi predict-point --lat {LATITUDE} --lon {LONGITUDE} --date {data_formatada}"
 
-    with st.spinner("Aguarde enquanto o CyFi acessa as informações..."):
+    with st.spinner("Aguarde enquanto o HidroSIS acessa as informações..."):
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
 
     if resultado.returncode == 0:
@@ -97,7 +97,7 @@ if st.button("Gerar Previsão"):
             try:
                 save_response = save_to_supabase(data)
                 if save_response.data:
-                    st.success("Dados salvos com sucesso no Supabase!")
+                    st.success("Dados salvos com sucesso na base!")
                 else:
                     st.error("Erro ao salvar dados no Supabase.")
             except Exception as e:
