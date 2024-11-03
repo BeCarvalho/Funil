@@ -1,4 +1,6 @@
 leafmap
+streamlit
+pandas
 setuptools
 streamlit-extras
 supabase
