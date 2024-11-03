@@ -123,3 +123,11 @@ if st.button("Gerar Previsão") and st.session_state.coordinates:
         st.error("Ocorreu um erro ao executar o comando CyFi.")
         st.text("Erro:")
         st.code(resultado.stderr, language="text")
+
+# Exibir tabela com dados do Supabase
+st.subheader("Dados da Base")
+if supabase_data:
+    df = pd.DataFrame(supabase_data)
+    st.dataframe(df)
+else:
+    st.warning("Não há dados disponíveis na base.")
