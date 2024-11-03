@@ -1,1 +1,4 @@
 leafmap
+setuptools
+streamlit-extras
+supabase
