@@ -77,7 +77,7 @@ def create_interactive_map(supabase_data):
 
         # Criando um container para as coordenadas
         with st.container():
-            st.markdown("<h3 style='text-align: center;'><strong>Coordenadas selecionadas</strong></h3>",
+            st.markdown("<h3 style='text-align: left;'><strong>Coordenadas selecionadas</strong></h3>",
                         unsafe_allow_html=True)
             col1, col2 = st.columns(2)
             with col1:
