@@ -10,7 +10,6 @@ from streamlit_folium import st_folium
 # Inicializar a conexão com o Supabase
 conn = st.connection("supabase", type=SupabaseConnection)
 
-
 # Função para extrair as informações relevantes
 def extract_relevant_info(output):
     pattern = r"Estimate generated:\s*(date.*?severity\s+\w+)"
@@ -18,7 +17,6 @@ def extract_relevant_info(output):
     if match:
         return match.group(1)
     return None
-
 
 # Função para converter a string em um dicionário
 def parse_output(output):
@@ -28,7 +26,6 @@ def parse_output(output):
         key, value = line.split(None, 1)
         data[key] = value.strip()
     return data
-
 
 # Função para salvar os dados no Supabase
 def save_to_supabase(data):
@@ -44,21 +41,28 @@ def save_to_supabase(data):
     response = table.insert(record).execute()
     return response
 
-
 # Função para obter dados do Supabase
+@st.cache_data(ttl=600)
 def get_data_from_supabase():
     table = conn.table("CyFi")
     response = table.select("*").execute()
     return response.data
 
-
-# Função para criar o mapa interativo com capacidade de captura de clique
-def create_clickable_map():
+# Função para criar o mapa interativo
+def create_interactive_map(supabase_data):
     m = leafmap.Map(center=[-22.528801960010114, -44.5645781500265], zoom=12)
     m.add_basemap("HYBRID")
 
-    # Renderizar o mapa usando o Streamlit-Folium e capturar o clique do usuário
-    clicked_data = st_folium(m, height=400, width=700)
+    if supabase_data:
+        for row in supabase_data:
+            popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
+            m.add_marker(
+                location=[row['latitude'], row['longitude']],
+                popup=popup,
+                tooltip=f"Contagem: {row['contagem']}"
+            )
+
+    clicked_data = st_folium(m, height=600, width=700)
     coordinates = None
 
     if clicked_data["last_clicked"]:
@@ -69,17 +73,24 @@ def create_clickable_map():
 
     return coordinates
 
+# Inicializar session_state
+if 'coordinates' not in st.session_state:
+    st.session_state.coordinates = None
 
-# Exibe o mapa e captura as coordenadas ao clicar
-st.subheader("Selecione o local para previsão de cianobactérias:")
-coordinates = create_clickable_map()
+# Interface principal
+st.title("Previsão de Cianobactérias")
 
-# Criar o widget de seleção de data
+st.subheader("Mapa Interativo de Cianobactérias")
+supabase_data = get_data_from_supabase()
+coordinates = create_interactive_map(supabase_data)
+
+if coordinates:
+    st.session_state.coordinates = coordinates
+
 data_selecionada = st.date_input("Selecione uma data", datetime.date.today())
 
-# Botão para gerar a previsão
-if st.button("Gerar Previsão") and coordinates:
-    latitude, longitude = coordinates
+if st.button("Gerar Previsão") and st.session_state.coordinates:
+    latitude, longitude = st.session_state.coordinates
     data_formatada = data_selecionada.strftime("%Y-%m-%d")
     comando = f"cyfi predict-point --lat {latitude} --lon {longitude} --date {data_formatada}"
 
@@ -93,11 +104,9 @@ if st.button("Gerar Previsão") and coordinates:
             st.success("Previsão gerada com sucesso!")
             st.table(data)
 
-            # Adiciona as coordenadas ao dicionário de dados para salvar no Supabase
             data["latitude"] = latitude
             data["longitude"] = longitude
 
-            # Salvar dados no Supabase
             try:
                 save_response = save_to_supabase(data)
                 if save_response.data:
@@ -108,26 +117,9 @@ if st.button("Gerar Previsão") and coordinates:
                 st.error(f"Erro ao salvar dados no Supabase: {str(e)}")
         else:
             st.warning("Não foi possível extrair as informações relevantes da saída.")
+            st.text("Saída do CyFi:")
+            st.code(resultado.stderr, language="text")
     else:
         st.error("Ocorreu um erro ao executar o comando CyFi.")
         st.text("Erro:")
         st.code(resultado.stderr, language="text")
-
-# Exibir o mapa com todos os dados do Supabase
-st.subheader("Mapa de Concentração de Cianobactérias")
-supabase_data = get_data_from_supabase()
-if supabase_data:
-    map_obj = leafmap.Map(center=[-22.528801960010114, -44.5645781500265], zoom=12)
-    df = pd.DataFrame(supabase_data)
-
-    # Adicionar marcadores com dados do Supabase
-    for _, row in df.iterrows():
-        popup = f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Severidade: {row['severidade']}"
-        map_obj.add_marker(
-            location=[row['latitude'], row['longitude']],
-            popup=popup,
-            tooltip=f"Contagem: {row['contagem']}"
-        )
-    map_obj.to_streamlit(height=400)
-else:
-    st.warning("Não há dados disponíveis para exibir no mapa.")
