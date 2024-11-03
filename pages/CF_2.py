@@ -86,16 +86,16 @@ if 'coordinates' not in st.session_state:
     st.session_state.coordinates = None
 
 # Interface principal
-st.title("Previsão de Cianobactérias")
+st.title("HidroSIS - Estimativa de Cianobactérias no Reservatório do Funil")
 
-st.subheader("Mapa Interativo de Cianobactérias")
+st.subheader("Clique em uma região do reservatório para gerar as contagens.")
 supabase_data = get_data_from_supabase()
 coordinates = create_interactive_map(supabase_data)
 
 if coordinates:
     st.session_state.coordinates = coordinates
 
-data_selecionada = st.date_input("Selecione uma data", datetime.date.today())
+data_selecionada = st.date_input("Agora, selecione uma data:", datetime.date.today())
 
 if st.button("Gerar Previsão") and st.session_state.coordinates:
     latitude, longitude = st.session_state.coordinates
