@@ -5,6 +5,8 @@ setuptools
 streamlit-extras
 supabase
 plotly
+plotly
 cyfi
+st-supabase-connection
 st-supabase-connection
 streamlit-folium
