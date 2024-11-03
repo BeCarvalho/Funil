@@ -69,7 +69,15 @@ def create_interactive_map(supabase_data):
         lat = clicked_data["last_clicked"]["lat"]
         lon = clicked_data["last_clicked"]["lng"]
         coordinates = (lat, lon)
-        st.write(f"Coordenadas selecionadas: Latitude: {lat}, Longitude: {lon}")
+
+        # Criando um container para as coordenadas
+        with st.container():
+            st.markdown("<h3 style='text-align: left;'><strong>Coordenadas selecionadas</strong></h3>", unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric(label="Latitude", value=f"{lat:.6f}")
+            with col2:
+                st.metric(label="Longitude", value=f"{lon:.6f}")
 
     return coordinates
 
