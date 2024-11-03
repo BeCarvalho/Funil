@@ -1,6 +1,7 @@
 import streamlit as st
 import subprocess
 import datetime
+from datetime import date, datetime
 import re
 from st_supabase_connection import SupabaseConnection
 import leafmap.foliumap as leafmap
@@ -31,12 +32,12 @@ def parse_output(output):
 def save_to_supabase(data):
     table = conn.table("CyFi")
     record = {
-        "criado_em": datetime.datetime.now().isoformat(),
-        "data": data['date'],
-        "latitude": float(data['latitude']),
-        "longitude": float(data['longitude']),
-        "contagem": int(data['density_cells_per_ml'].replace(',', '')),
-        "severidade": data['severity']
+        "criado_em": datetime.now().isoformat(),
+        "data": data['Data selecionada'],
+        "latitude": float(data['Latitude']),
+        "longitude": float(data['Longitude']),
+        "contagem": int(data['Contagem'].replace(',', '')),
+        "severidade": data['Intensidade']
     }
     response = table.insert(record).execute()
     return response
@@ -95,7 +96,7 @@ coordinates = create_interactive_map(supabase_data)
 if coordinates:
     st.session_state.coordinates = coordinates
 
-data_selecionada = st.date_input("Agora, selecione uma data:", datetime.date.today())
+data_selecionada = st.date_input("Agora, selecione uma data:", date.today())
 
 if st.button("Gerar Previsão") and st.session_state.coordinates:
     latitude, longitude = st.session_state.coordinates
@@ -109,14 +110,36 @@ if st.button("Gerar Previsão") and st.session_state.coordinates:
         relevant_info = extract_relevant_info(resultado.stderr)
         if relevant_info:
             data = parse_output(relevant_info)
-            st.success("Previsão gerada com sucesso!")
-            st.table(data)
 
-            data["latitude"] = latitude
-            data["longitude"] = longitude
+            # Tradução e formatação dos dados
+            data_formatada = datetime.strptime(data['date'], "%Y-%m-%d").strftime("%d-%m-%Y")
+            contagem = int(data['density_cells_per_ml'].replace(',', ''))
+
+            # Tradução da severidade
+            severidade_map = {"high": "alta", "moderate": "média", "low": "baixa"}
+            intensidade = severidade_map.get(data['severity'], data['severity'])
+
+            # Criando um DataFrame formatado
+            df_formatado = pd.DataFrame({
+                "Informação": ["Data selecionada", "Latitude", "Longitude", "Contagem", "Intensidade"],
+                "Valor": [data_formatada, f"{float(data['latitude']):.6f}", f"{float(data['longitude']):.6f}",
+                          f"{contagem:,}", intensidade]
+            })
+
+            st.success("Previsão gerada com sucesso!")
+            st.table(df_formatado)
+
+            # Preparando os dados para salvar no Supabase
+            dados_para_salvar = {
+                "Data selecionada": data['date'],  # Mantém o formato original YYYY-MM-DD para o banco de dados
+                "Latitude": data['latitude'],
+                "Longitude": data['longitude'],
+                "Contagem": data['density_cells_per_ml'],
+                "Intensidade": intensidade
+            }
 
             try:
-                save_response = save_to_supabase(data)
+                save_response = save_to_supabase(dados_para_salvar)
                 if save_response.data:
                     st.success("Dados salvos com sucesso na base!")
                 else:
