@@ -43,6 +43,33 @@ def get_data_from_supabase():
 # Interface principal
 st.title("HidroSIS - Estimativa de Cianobactérias no Reservatório do Funil")
 
+# Exibir mapa logo após o título
+st.subheader("Mapa de Cianobactérias")
+supabase_data = get_data_from_supabase()
+if supabase_data:
+    df = pd.DataFrame(supabase_data)
+
+    # Criar o mapa
+    m = leafmap.Map(center=[-22.529560224597578, -44.56332013747647], zoom=10)
+
+    # Adicionar marcadores ao mapa
+    for idx, row in df.iterrows():
+        popup = f"""
+        Data: {row['data']}
+        Contagem: {row['contagem']}
+        Intensidade: {row['severidade']}
+        """
+        m.add_marker(
+            location=[row['latitude'], row['longitude']],
+            popup=popup,
+            tooltip=f"Contagem: {row['contagem']}"
+        )
+
+    # Exibir o mapa
+    folium_static(m)
+else:
+    st.warning("Não há dados disponíveis para exibir no mapa.")
+
 # Coordenadas fixas
 latitude = -22.529560224597578
 longitude = -44.56332013747647
@@ -100,32 +127,7 @@ if st.button("Gerar Previsão"):
 
 # Exibir dados do Supabase
 st.subheader("Dados da Base")
-supabase_data = get_data_from_supabase()
 if supabase_data:
-    df = pd.DataFrame(supabase_data)
     st.dataframe(df)
-
-    # Criar mapa Leafmap
-    st.subheader("Mapa de Cianobactérias")
-
-    # Criar o mapa
-    m = leafmap.Map(center=[-22.529560224597578, -44.56332013747647], zoom=10)
-
-    # Adicionar marcadores ao mapa
-    for idx, row in df.iterrows():
-        popup = f"""
-        Data: {row['data']}
-        Contagem: {row['contagem']}
-        Intensidade: {row['severidade']}
-        """
-        m.add_marker(
-            location=[row['latitude'], row['longitude']],
-            popup=popup,
-            tooltip=f"Contagem: {row['contagem']}"
-        )
-
-    # Exibir o mapa
-    folium_static(m)
-
 else:
     st.warning("Não há dados disponíveis na base.")
