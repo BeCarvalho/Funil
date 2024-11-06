@@ -31,7 +31,7 @@ def save_to_supabase(data):
     }
     return table.insert(record).execute()
 
-@st.cache_data(ttl=600)
+# Removido o decorador de cache
 def get_data_from_supabase():
     return conn.table("CyFi").select("data", "latitude", "longitude", "contagem", "severidade").execute().data
 
