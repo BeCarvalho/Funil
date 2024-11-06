@@ -4,12 +4,11 @@ from datetime import date, datetime
 import re
 from st_supabase_connection import SupabaseConnection
 import pandas as pd
-import leafmap.foliumap as leafmap
-from streamlit_folium import folium_static
+import folium
+from streamlit_folium import st_folium
 
 # Inicializar a conexão com o Supabase
 conn = st.connection("supabase", type=SupabaseConnection)
-
 
 # Funções auxiliares
 def extract_relevant_info(output):
@@ -17,10 +16,8 @@ def extract_relevant_info(output):
     match = re.search(pattern, output, re.DOTALL)
     return match.group(1) if match else None
 
-
 def parse_output(output):
     return dict(line.split(None, 1) for line in output.strip().split('\n'))
-
 
 def save_to_supabase(data):
     table = conn.table("CyFi")
@@ -34,45 +31,39 @@ def save_to_supabase(data):
     }
     return table.insert(record).execute()
 
-
 @st.cache_data(ttl=600)
 def get_data_from_supabase():
     return conn.table("CyFi").select("data", "latitude", "longitude", "contagem", "severidade").execute().data
 
-
 # Interface principal
 st.title("HidroSIS - Estimativa de Cianobactérias no Reservatório do Funil")
 
-# Exibir mapa logo após o título
-st.subheader("Mapa de Cianobactérias")
+# Criar o mapa
+m = folium.Map(location=[-22.529560224597578, -44.56332013747647], zoom_start=10)
+
+# Adicionar marcadores existentes ao mapa
 supabase_data = get_data_from_supabase()
 if supabase_data:
     df = pd.DataFrame(supabase_data)
-
-    # Criar o mapa
-    m = leafmap.Map(center=[-22.529560224597578, -44.56332013747647], zoom=10)
-
-    # Adicionar marcadores ao mapa
     for idx, row in df.iterrows():
-        popup = f"""
-        Data: {row['data']}
-        Contagem: {row['contagem']}
-        Intensidade: {row['severidade']}
-        """
-        m.add_marker(
+        folium.Marker(
             location=[row['latitude'], row['longitude']],
-            popup=popup,
+            popup=f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Intensidade: {row['severidade']}",
             tooltip=f"Contagem: {row['contagem']}"
-        )
+        ).add_to(m)
 
-    # Exibir o mapa
-    folium_static(m)
-else:
-    st.warning("Não há dados disponíveis para exibir no mapa.")
+# Exibir o mapa e capturar eventos de clique
+map_data = st_folium(m, width=700, height=500)
 
-# Coordenadas fixas
+# Inicializar variáveis para latitude e longitude
 latitude = -22.529560224597578
 longitude = -44.56332013747647
+
+# Verificar se um ponto foi selecionado no mapa
+if map_data['last_clicked'] is not None:
+    latitude = map_data['last_clicked']['lat']
+    longitude = map_data['last_clicked']['lng']
+    st.write(f"Coordenadas selecionadas: Latitude {latitude:.6f}, Longitude {longitude:.6f}")
 
 # Interface de previsão
 data_selecionada = st.date_input("Selecione uma data:", date.today())
