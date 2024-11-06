@@ -4,9 +4,12 @@ from datetime import date, datetime
 import re
 from st_supabase_connection import SupabaseConnection
 import pandas as pd
+import leafmap.foliumap as leafmap
+from streamlit_folium import folium_static
 
 # Inicializar a conexão com o Supabase
 conn = st.connection("supabase", type=SupabaseConnection)
+
 
 # Funções auxiliares
 def extract_relevant_info(output):
@@ -14,8 +17,10 @@ def extract_relevant_info(output):
     match = re.search(pattern, output, re.DOTALL)
     return match.group(1) if match else None
 
+
 def parse_output(output):
     return dict(line.split(None, 1) for line in output.strip().split('\n'))
+
 
 def save_to_supabase(data):
     table = conn.table("CyFi")
@@ -24,14 +29,16 @@ def save_to_supabase(data):
         "data": data['Data selecionada'],
         "latitude": data['Latitude'],
         "longitude": data['Longitude'],
-        "contagem": data['Contagem'],  # Já deve ser um inteiro
+        "contagem": data['Contagem'],
         "severidade": data['Intensidade']
     }
     return table.insert(record).execute()
 
+
 @st.cache_data(ttl=600)
 def get_data_from_supabase():
-    return conn.table("CyFi").select("*").execute().data
+    return conn.table("CyFi").select("data", "latitude", "longitude", "contagem", "severidade").execute().data
+
 
 # Interface principal
 st.title("HidroSIS - Estimativa de Cianobactérias no Reservatório do Funil")
@@ -73,7 +80,7 @@ if st.button("Gerar Previsão"):
 
             # Preparar dados para salvar no Supabase
             dados_para_salvar = {
-                "Data selecionada": data['date'],  # Mantém o formato original YYYY-MM-DD
+                "Data selecionada": data['date'],
                 "Latitude": float(data['latitude']),
                 "Longitude": float(data['longitude']),
                 "Contagem": contagem,
@@ -95,6 +102,30 @@ if st.button("Gerar Previsão"):
 st.subheader("Dados da Base")
 supabase_data = get_data_from_supabase()
 if supabase_data:
-    st.dataframe(pd.DataFrame(supabase_data))
+    df = pd.DataFrame(supabase_data)
+    st.dataframe(df)
+
+    # Criar mapa Leafmap
+    st.subheader("Mapa de Cianobactérias")
+
+    # Criar o mapa
+    m = leafmap.Map(center=[-22.529560224597578, -44.56332013747647], zoom=10)
+
+    # Adicionar marcadores ao mapa
+    for idx, row in df.iterrows():
+        popup = f"""
+        Data: {row['data']}
+        Contagem: {row['contagem']}
+        Intensidade: {row['severidade']}
+        """
+        m.add_marker(
+            location=[row['latitude'], row['longitude']],
+            popup=popup,
+            tooltip=f"Contagem: {row['contagem']}"
+        )
+
+    # Exibir o mapa
+    folium_static(m)
+
 else:
     st.warning("Não há dados disponíveis na base.")
