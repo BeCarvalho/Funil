@@ -31,5 +31,5 @@ st.title("HidroSIS - Mapa de Calor")
 m.to_streamlit(height=700)
 
 # Exibe os dados em uma tabela (opcional)
-st.subheader("hIDROsis - Dados")
+st.subheader("HidroSIS - Dados")
 st.dataframe(df)
