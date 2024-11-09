@@ -27,9 +27,9 @@ m.add_heatmap(
 )
 
 # Exibe o mapa no Streamlit
-st.title("Mapa de Calor CyFi")
+st.title("HidroSIS - Mapa de Calor")
 m.to_streamlit(height=700)
 
 # Exibe os dados em uma tabela (opcional)
-st.subheader("Dados da Tabela CyFi")
+st.subheader("hIDROsis - Dados")
 st.dataframe(df)
