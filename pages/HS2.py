@@ -3,8 +3,8 @@ import subprocess
 from datetime import date, datetime
 import re
 from st_supabase_connection import SupabaseConnection
+import leafmap.foliumap as leafmap
 import pandas as pd
-import folium
 from streamlit_folium import st_folium
 
 # Inicializar a conexão com o Supabase
@@ -24,53 +24,56 @@ def save_to_supabase(data):
     record = {
         "criado_em": datetime.now().isoformat(),
         "data": data['Data selecionada'],
-        "latitude": data['Latitude'],
-        "longitude": data['Longitude'],
-        "contagem": data['Contagem'],
+        "latitude": float(data['Latitude']),
+        "longitude": float(data['Longitude']),
+        "contagem": int(data['Contagem']),
         "severidade": data['Intensidade']
     }
     return table.insert(record).execute()
 
-# Removido o decorador de cache
+@st.cache_data(ttl=600)
 def get_data_from_supabase():
-    return conn.table("CyFi").select("data", "latitude", "longitude", "contagem", "severidade").execute().data
+    return conn.table("CyFi").select("*").execute().data
+
+def create_map():
+    m = leafmap.Map(center=[-22.528801960010114, -44.5645781500265], zoom=13)
+    m.add_basemap("HYBRID")
+    return m
 
 # Interface principal
 st.title("HidroSIS - Estimativa de Cianobactérias no Reservatório do Funil")
 
-# Criar o mapa
-m = folium.Map(location=[-22.529560224597578, -44.56332013747647], zoom_start=10)
+# Inicializar estado da sessão para coordenadas
+if 'coordinates' not in st.session_state:
+    st.session_state.coordinates = None
 
-# Adicionar marcadores existentes ao mapa
-supabase_data = get_data_from_supabase()
-if supabase_data:
-    df = pd.DataFrame(supabase_data)
-    for idx, row in df.iterrows():
-        folium.Marker(
-            location=[row['latitude'], row['longitude']],
-            popup=f"Data: {row['data']}<br>Contagem: {row['contagem']}<br>Intensidade: {row['severidade']}",
-            tooltip=f"Contagem: {row['contagem']}"
-        ).add_to(m)
+# Carregar mapa inicial
+m = create_map()
 
-# Exibir o mapa e capturar eventos de clique
-map_data = st_folium(m, width=700, height=500)
+# Exibir mapa
+st.subheader("Clique em uma região do reservatório para gerar as contagens.")
+with st.container():
+    map_data = st_folium(m, width=700, height=500)
 
-# Inicializar variáveis para latitude e longitude
-latitude = -22.529560224597578
-longitude = -44.56332013747647
+    # Processar clique no mapa
+    if map_data and map_data.get("last_clicked"):
+        lat, lon = map_data["last_clicked"]["lat"], map_data["last_clicked"]["lng"]
+        st.session_state.coordinates = (lat, lon)
 
-# Verificar se um ponto foi selecionado no mapa
-if map_data['last_clicked'] is not None:
-    latitude = map_data['last_clicked']['lat']
-    longitude = map_data['last_clicked']['lng']
-    st.write(f"Coordenadas selecionadas: Latitude {latitude:.6f}, Longitude {longitude:.6f}")
+    if st.session_state.coordinates:
+        lat, lon = st.session_state.coordinates
+        col1, col2 = st.columns(2)
+        col1.metric("Latitude", f"{lat:.6f}")
+        col2.metric("Longitude", f"{lon:.6f}")
 
 # Interface de previsão
 data_selecionada = st.date_input("Selecione uma data:", date.today())
 
-if st.button("Gerar Previsão"):
+# Botão para gerar previsão
+if st.button("Gerar Previsão") and st.session_state.coordinates:
+    lat, lon = st.session_state.coordinates
     data_formatada = data_selecionada.strftime("%Y-%m-%d")
-    comando = f"cyfi predict-point --lat {latitude} --lon {longitude} --date {data_formatada}"
+    comando = f"cyfi predict-point --lat {lat} --lon {lon} --date {data_formatada}"
 
     with st.spinner("Gerando previsão..."):
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
@@ -81,7 +84,7 @@ if st.button("Gerar Previsão"):
             data = parse_output(info)
             severidade_map = {"high": "alta", "moderate": "média", "low": "baixa"}
             intensidade = severidade_map.get(data['severity'], data['severity'])
-            contagem = int(data['density_cells_per_ml'].replace(',', ''))
+            contagem = int(data['density_cells_per_ml'].replace(',', '')) if isinstance(data['density_cells_per_ml'], str) else data['density_cells_per_ml']
 
             df_formatado = pd.DataFrame({
                 "Informação": ["Data", "Latitude", "Longitude", "Contagem", "Intensidade"],
@@ -98,7 +101,7 @@ if st.button("Gerar Previsão"):
 
             # Preparar dados para salvar no Supabase
             dados_para_salvar = {
-                "Data selecionada": data['date'],
+                "Data selecionada": data['date'],  # Mantém o formato original YYYY-MM-DD
                 "Latitude": float(data['latitude']),
                 "Longitude": float(data['longitude']),
                 "Contagem": contagem,
@@ -116,9 +119,27 @@ if st.button("Gerar Previsão"):
         st.error("Erro ao executar o comando CyFi.")
         st.code(resultado.stderr, language="text")
 
-# Exibir dados do Supabase
+# Obter dados do Supabase
+supabase_data = get_data_from_supabase()
+
+# Exibir dados do Supabase com filtro de mês e ano
 st.subheader("Dados da Base")
+
+# Seletor de mês e ano
+with st.container():
+    col1, col2 = st.columns(2)
+    mes = col1.selectbox("Selecione o mês:", range(1, 13), format_func=lambda x: datetime(1900, x, 1).strftime("%B"))
+    ano = col2.selectbox("Selecione o ano:", range(datetime.now().year, datetime.now().year - 10, -1))
+
+# Filtrar dados
 if supabase_data:
-    st.dataframe(df)
+    df = pd.DataFrame(supabase_data)
+    df['data'] = pd.to_datetime(df['data'])
+    df_filtrado = df[(df['data'].dt.month == mes) & (df['data'].dt.year == ano)]
+
+    if not df_filtrado.empty:
+        st.dataframe(df_filtrado)
+    else:
+        st.warning("Não há dados disponíveis para o período selecionado. Por favor, escolha outro período.")
 else:
     st.warning("Não há dados disponíveis na base.")
